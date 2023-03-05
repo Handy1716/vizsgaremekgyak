@@ -1,12 +1,12 @@
 import React, { Component, FormEvent } from 'react';
-import logo from './logo.svg';
 import './App.css';
-import { PassThrough } from 'stream';
 
 interface State {
   username: string;
   password: string;
   loginError: string;
+  loggedIn: boolean;
+  authorToken: string;
 }
 class App extends Component<{}, State> {
   constructor(props: {}) {
@@ -16,6 +16,8 @@ class App extends Component<{}, State> {
         username: '',
         password: '',
         loginError: '',
+        loggedIn: false,
+        authorToken: '',
       }
   }
   //async  promist ad vissza?
@@ -25,13 +27,16 @@ class App extends Component<{}, State> {
   // miért van a statenek setState metódusa honnan hivatkozik rá ha felül nincsen beimportálva
 
 
+  handleLoadProfile =async () => { const responsive = await fetch('http://localhost:3000/auth/login');
+    
+  }
   handleLogin = async (e: FormEvent) => {
     e.preventDefault(); 
     const LoginData = {
       'username': this.state.username, //itt?
       'password': this.state.password,
     };
-    const responsive = await fetch('http://localhost:3000/auth/login', {
+    const responsive = await fetch('http://localhost:3000/login', {
       method: 'POST',
         headers: {
           'Content-type': 'application/json'
@@ -41,24 +46,39 @@ class App extends Component<{}, State> {
     if(!responsive.ok) {
         if(responsive.status == 401) {
             this.setState({ loginError: 'Wrong username or password'})
-        }
-    }
+        } else ( this.setState({ loginError: 'Server problem'}))
+        return;
+      }
+      const responseBody = await responsive.json();
+      console.log(responseBody.token);
+      this.setState({loggedIn: true})
+
   }
 
   render() {
+    const { username, password, loggedIn, loginError } = this.state;
+    if (loggedIn) {
+      return <div>
+        <p> <button>Logout</button></p>
+        <p> <button onClick={this.handleLoadProfile}>Load profile data</button></p>
+        <p> My profile:</p>
+        <p> Username: [USER]</p>
+        <p> User id:  [ID]</p>
+      </div>
+    } 
     return <div>
       <form onSubmit = {this.handleLogin}>
         <label>
           Username: <br/>
-          <input type="text" value={this.state.username} onChange={(e)=> this.setState({username: e.target.value})}/>
+          <input type="text" value={username} onChange={(e)=> this.setState({username: e.target.value})}/>
         </label>
         <br />
         <label >
            Pssword:<br />
-            <input type="password" value={this.state.password} onChange={(e)=> this.setState({password: e.target.value})}/>
+            <input type="password" value={password} onChange={(e)=> this.setState({password: e.target.value})}/>
           </label>
           <br/>
-            <p>{this.state.loginError}</p>
+            <p>{ loginError }</p>
           <input type="submit" value="Login" />
         </form>
     </div>
